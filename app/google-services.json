@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "281218371948",
+    "project_id": "tradingalerts-ea4db",
+    "storage_bucket": "tradingalerts-ea4db.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:281218371948:android:502082f5f9ec98ba6fe349",
+        "android_client_info": {
+          "package_name": "com.example.tradingalerts"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuLDi4awT9OSHrOEUgoFNG3CYPTLjDC1s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:padding="16dp"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="FCM token fetching..."
+        android:textSize="14sp"/>
+
+    <Button
+        android:id="@+id/btnCopyToken"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Copy FCM Token" />
+
+    <TextView
+        android:id="@+id/tvLastMsg"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:text="Last alert will appear here"
+        android:paddingTop="16dp"/>
+</LinearLayout>

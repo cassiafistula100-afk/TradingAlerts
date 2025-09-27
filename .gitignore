@@ -1,0 +1,17 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea
+/captures
+.externalNativeBuild
+.cxx
+/build
+/app/build
+
+# Node
+server/node_modules
+server/serviceAccountKey.json
+
+# Misc
+.DS_Store
