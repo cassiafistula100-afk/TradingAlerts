@@ -1,40 +1,56 @@
-import express from "express";
-import admin from "firebase-admin";
+// server/index.js
+const express = require("express");
+const admin = require("firebase-admin");
 
-// load Firebase credentials from env var
-const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+  });
+}
 
 const app = express();
 app.use(express.json());
 
-app.post("/webhook", (req, res) => {
-  const authToken = req.body["auth-token"];
-  if (authToken !== process.env.WEBHOOK_SECRET) {
-    return res.status(401).send({ ok: false, error: "Unauthorized" });
+app.post("/webhook", async (req, res) => {
+  try {
+    if (req.body["auth-token"] !== process.env.WEBHOOK_SECRET) {
+      return res.status(401).json({ ok: false, error: "unauthorized" });
+    }
+
+    const title = req.body.title || "TradingView Alert";
+    const body =
+      req.body.message || req.body.value || JSON.stringify(req.body);
+
+    // If "token" field is given, send direct to device token
+    // Otherwise, send to the topic "trading-alerts"
+    const msg = req.body.token
+      ? {
+          token: req.body.token,
+          notification: { title, body },
+          data: { value: body },
+        }
+      : {
+          topic: "trading-alerts",
+          notification: { title, body },
+          data: { value: body },
+        };
+
+    const id = await admin.messaging().send(msg);
+
+    res.json({
+      ok: true,
+      id,
+      mode: req.body.token ? "token" : "topic", // ✅ debug info
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: e.message });
   }
-
-  const title = req.body.title || "Trading Alert";
-  const message = req.body.message || "";
-
-  admin.messaging().send({
-    topic: "all",
-    notification: { title, body: message },
-    data: req.body
-  })
-  .then((response) => {
-    res.send({ ok: true, id: response });
-  })
-  .catch((err) => {
-    console.error("FCM send error", err);
-    res.status(500).send({ ok: false, error: err.message });
-  });
 });
 
+// Render will run this automatically
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Webhook listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
