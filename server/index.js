@@ -1,49 +1,40 @@
-const express = require("express");
-const admin = require("firebase-admin");
-const path = require("path");
+import express from "express";
+import admin from "firebase-admin";
+
+// load Firebase credentials from env var
+const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 const app = express();
 app.use(express.json());
 
-// 1) service account (keep this file secret!)
-const KEY_PATH = path.join(__dirname, "serviceAccountKey.json");
-admin.initializeApp({ credential: admin.credential.cert(require(KEY_PATH)) });
-
-// 2) simple shared secret – match this with TradingView alert JSON
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "my-super-secret";
-
-// 3) main webhook
-app.post("/webhook", async (req, res) => {
-  try {
-    if (req.body["auth-token"] !== WEBHOOK_SECRET) {
-      return res.status(401).json({ ok: false, error: "unauthorized" });
-    }
-
-    // choose where to deliver
-    const sendToTopic = true; // set false if you want per-device tokens
-
-    const title = req.body.title || "TradingView Alert";
-    const body  = req.body.message || req.body.value || JSON.stringify(req.body);
-
-    const message = {
-      notification: { title, body },
-      data: { value: body }
-    };
-
-    if (sendToTopic) {
-      message.topic = "trading-alerts";
-    } else {
-      if (!req.body.token) return res.status(400).json({ ok:false, error:"missing token" });
-      message.token = req.body.token;
-    }
-
-    const id = await admin.messaging().send(message);
-    return res.json({ ok:true, id });
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ ok:false, error:e.message });
+app.post("/webhook", (req, res) => {
+  const authToken = req.body["auth-token"];
+  if (authToken !== process.env.WEBHOOK_SECRET) {
+    return res.status(401).send({ ok: false, error: "Unauthorized" });
   }
+
+  const title = req.body.title || "Trading Alert";
+  const message = req.body.message || "";
+
+  admin.messaging().send({
+    topic: "all",
+    notification: { title, body: message },
+    data: req.body
+  })
+  .then((response) => {
+    res.send({ ok: true, id: response });
+  })
+  .catch((err) => {
+    console.error("FCM send error", err);
+    res.status(500).send({ ok: false, error: err.message });
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Webhook listening on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Webhook listening on port ${PORT}`);
+});
