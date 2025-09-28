@@ -12,6 +12,7 @@ if (!admin.apps.length) {
 const app = express();
 app.use(express.json());
 
+// Webhook endpoint
 app.post("/webhook", async (req, res) => {
   try {
     if (req.body["auth-token"] !== process.env.WEBHOOK_SECRET) {
@@ -22,34 +23,26 @@ app.post("/webhook", async (req, res) => {
     const body =
       req.body.message || req.body.value || JSON.stringify(req.body);
 
-    // If "token" field is given, send direct to device token
-    // Otherwise, send to the topic "trading-alerts"
+    // Send to token if provided, else to topic
     const msg = req.body.token
-      ? {
-          token: req.body.token,
-          notification: { title, body },
-          data: { value: body },
-        }
-      : {
-          topic: "trading-alerts",
-          notification: { title, body },
-          data: { value: body },
-        };
+      ? { token: req.body.token, notification: { title, body }, data: { value: body } }
+      : { topic: "trading-alerts", notification: { title, body }, data: { value: body } };
 
     const id = await admin.messaging().send(msg);
 
-    res.json({
-      ok: true,
-      id,
-      mode: req.body.token ? "token" : "topic", // ✅ debug info
-    });
+    res.json({ ok: true, id, mode: req.body.token ? "token" : "topic" });
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, error: e.message });
   }
 });
 
-// Render will run this automatically
+// Debug endpoint to confirm deployed version
+app.get("/version", (req, res) => {
+  res.json({ version: "3", hasMode: true });
+});
+
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
